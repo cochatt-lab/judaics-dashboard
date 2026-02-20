@@ -1,144 +1,297 @@
-import dash
-from dash import dcc, html, Input, Output, dash_table
-import pandas as pd
-import plotly.express as px
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Judaics Curriculum Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; }
+    h1 { text-align: center; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    select { width: 100%; padding: 6px; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .note { margin-top: 15px; font-size: 0.9em; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Judaics Curriculum Dashboard</h1>
 
-# Load the data (update path if needed)
-df = pd.read_excel('JUDAIC-CURRICULUM-Domain_Grade_Content_-Allocation-Detail.xlsx')
+  <!-- Dropdowns -->
+  <label for="domain">Domain (Column A)</label>
+  <select id="domain">
+    <option value="">Select Domain</option>
+  </select>
 
-# Clean data: Fill NaNs, convert Grade to string for dropdown
-df['Grade'] = df['Grade'].fillna('N/A').astype(str)
-df['Concepts'] = df['Concepts'].fillna('')
+  <label for="grade">Grade (Column B)</label>
+  <select id="grade" disabled>
+    <option value="">Select Grade</option>
+  </select>
 
-# Extract unique concepts/names from Column C for D dropdown (split by common terms)
-def extract_concepts(content):
-    if pd.isna(content):
-        return []
-    text = str(content).lower()
-    concepts = []
-    for term in ['genesis', 'bereshit', 'exodus', 'shemot', 'numbers', 'bamidbar', 'deuteronomy', 'devarim', 
-                 'leviticus', 'vayikra', 'joshua', 'yehoshua', 'samuel', 'shmuel', 'kings', 'melachim', 
-                 'isaiah', 'yeshayahu', 'jeremiah', 'yirmiyahu']:
-        if term in text:
-            concepts.append(term.title())
-    return list(set(concepts))  # Unique
+  <label for="content">Content / Allocation (Column C)</label>
+  <select id="content" disabled>
+    <option value="">Select Content</option>
+  </select>
 
-all_concepts = sorted(set([c for concepts in df['Content / Allocation'].apply(extract_concepts) for c in concepts]))
+  <label for="colD">Column D concepts (from all C cells)</label>
+  <select id="colD">
+    <option value="">Select concept/name</option>
+  </select>
 
-# Init app
-app = dash.Dash(__name__)
+  <label for="colE">Column E</label>
+  <select id="colE">
+    <option value="">No options (empty in sheet)</option>
+  </select>
 
-app.layout = html.Div([
-    html.H1("Judaic Curriculum Dashboard", style={'textAlign': 'center'}),
-    
-    # Dropdown A: Domain
-    html.Label("Domain (Column A):"),
-    dcc.Dropdown(
-        id='domain-dropdown',
-        options=[{'label': d, 'value': d} for d in sorted(df['Domain'].dropna().unique())],
-        value=None,
-        multi=False
-    ),
-    
-    # Dropdown B: Grade (depends on A)
-    html.Label("Grade (Column B):"),
-    dcc.Dropdown(id='grade-dropdown', value=None),
-    
-    # Dropdown C: Content (populated after B)
-    html.Label("Content (Column C):"),
-    dcc.Dropdown(id='content-dropdown', value=None),
-    
-    # Dropdown D: Concepts (from C extraction + original)
-    html.Label("Concepts (Column D):"),
-    dcc.Dropdown(id='concepts-dropdown', options=[{'label': c, 'value': c} for c in all_concepts], value=None, multi=True),
-    
-    # Dropdowns E-H
-    html.Label("JSAT (Column E):"), dcc.Dropdown(id='jsat-dropdown', multi=True),
-    html.Label("ELA (Column F):"), dcc.Dropdown(id='ela-dropdown', multi=True),
-    html.Label("History/Geography (Column G):"), dcc.Dropdown(id='hist-dropdown', multi=True),
-    html.Label("Hebrew (Column H):"), dcc.Dropdown(id='hebrew-dropdown', multi=True),
-    
-    # Filtered table
-    dash_table.DataTable(id='table', page_size=10),
-    
-    # Summary chart
-    dcc.Graph(id='chart')
-])
+  <label for="colF">Column F</label>
+  <select id="colF">
+    <option value="">No options (empty in sheet)</option>
+  </select>
 
-# Callback: Update B based on A
-@app.callback(
-    Output('grade-dropdown', 'options'),
-    Input('domain-dropdown', 'value')
-)
-def update_grade(domain):
-    if domain is None:
-        return []
-    filtered = df[df['Domain'] == domain]
-    return [{'label': g, 'value': g} for g in sorted(filtered['Grade'].unique())]
+  <label for="colG">Column G</label>
+  <select id="colG">
+    <option value="">No options (empty in sheet)</option>
+  </select>
 
-# Update C based on B
-@app.callback(
-    Output('content-dropdown', 'options'),
-    [Input('domain-dropdown', 'value'), Input('grade-dropdown', 'value')]
-)
-def update_content(domain, grade):
-    if domain is None or grade is None:
-        return []
-    filtered = df[(df['Domain'] == domain) & (df['Grade'].astype(str) == grade)]
-    return [{'label': str(c), 'value': str(c)} for c in filtered['Content / Allocation'].unique()]
+  <label for="colH">Column H</label>
+  <select id="colH">
+    <option value="">No options (empty in sheet)</option>
+  </select>
 
-# Update E-H options based on prior + concepts
-@app.callback(
-    [Output('jsat-dropdown', 'options'),
-     Output('ela-dropdown', 'options'),
-     Output('hist-dropdown', 'options'),
-     Output('hebrew-dropdown', 'options')],
-    [Input('domain-dropdown', 'value'),
-     Input('grade-dropdown', 'value'),
-     Input('content-dropdown', 'value'),
-     Input('concepts-dropdown', 'value')]
-)
-def update_eh_options(domain, grade, content, concepts):
-    if domain is None:
-        return [], [], [], []
-    mask = df['Domain'] == domain
-    if grade: mask &= df['Grade'].astype(str) == grade
-    if content: mask &= df['Content / Allocation'].astype(str) == content
-    if concepts:
-        mask &= df['Content / Allocation'].apply(lambda x: any(c.lower() in str(x).lower() for c in concepts))
-    filtered = df[mask]
-    opts = lambda col: [{'label': str(v), 'value': str(v)} for v in filtered[col].dropna().unique()]
-    return (opts('JSAT benchmarks'), opts('ELA benchmarks'), opts('History and Geography benchmarks'), opts('Hebrew Language benchmarks ????'))
+  <div class="note">
+    Domain determines Grade options, Grade determines Content options.  
+    Column D dropdown is built from all unique values that appear in Column C of the curriculum file.
+  </div>
 
-# Filtered table and chart
-@app.callback(
-    [Output('table', 'data'), Output('table', 'columns'), Output('chart', 'figure')],
-    [Input('domain-dropdown', 'value'),
-     Input('grade-dropdown', 'value'),
-     Input('content-dropdown', 'value'),
-     Input('concepts-dropdown', 'value'),
-     Input('jsat-dropdown', 'value'),
-     Input('ela-dropdown', 'value'),
-     Input('hist-dropdown', 'value'),
-     Input('hebrew-dropdown', 'value')]
-)
-def update_dashboard(domain, grade, content, concepts, jsat, ela, hist, hebrew):
-    mask = pd.Series([True] * len(df), index=df.index)
-    if domain: mask &= df['Domain'] == domain
-    if grade: mask &= df['Grade'].astype(str) == grade
-    if content: mask &= df['Content / Allocation'].astype(str) == content
-    if concepts:
-        mask &= df['Content / Allocation'].apply(lambda x: any(c.lower() in str(x).lower() for c in concepts))
-    if jsat: mask &= df['JSAT benchmarks'].astype(str).isin(jsat)
-    if ela: mask &= df['ELA benchmarks'].astype(str).isin(ela)
-    if hist: mask &= df['History and Geography benchmarks'].astype(str).isin(hist)
-    if hebrew: mask &= df['Hebrew Language benchmarks ????'].astype(str).isin(hebrew)
-    
-    filtered_df = df[mask]
-    columns = [{"name": i, "id": i} for i in df.columns]
-    fig = px.bar(filtered_df, x='Grade', color='Domain', title='Filtered Records by Grade') if not filtered_df.empty else px.bar(title='No Data')
-    
-    return filtered_df.to_dict('records'), columns, fig
+  <!-- Data table -->
+  <table id="table">
+    <thead>
+      <tr>
+        <th>Domain (A)</th>
+        <th>Grade (B)</th>
+        <th>Content / Allocation (C)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+  <script>
+    // Data extracted from your Excel file via Python
+    const domains = ["Chumash","Halacha","Meta","Navi","Support – Hebrew","Talmud / Gemara","Talmud / Mishnah","Time / Structure"];
+
+    const domainToGrades = {
+      "Chumash": ["2026-01-05 00:00:00","2026-09-11 00:00:00","Not covered","Not covered in HS","6","7","8"],
+      "Halacha": ["All"],
+      "Meta": ["All"],
+      "Navi": ["2026-01-05 00:00:00","10","11","6","7","8","9"],
+      "Support – Hebrew": ["2026-01-05 00:00:00"],
+      "Talmud / Gemara": ["10","11","7","8","9"],
+      "Talmud / Mishnah": ["6"],
+      "Time / Structure": ["All"]
+    };
+
+    const gradeToContents = {
+      "2026-01-05 00:00:00": [
+        "Genesis Bereshit (50 chapters, 2-3 concepts) + 1/2 Exodus (20 chapters, 2-3 themes)",
+        "Joshua",
+        "Foundations",
+        "Intermediate",
+        "Advanced"
+      ],
+      "6": [
+        "First half of Numbers (15 chapters, 2-3 topics each)",
+        "Samuel alef (31 chapters)",
+        "Mishnah Berachot (9 sections, 5-10 themes)"
+      ],
+      "7": [
+        "Second half of Numbers (chapters 16-32, 2-3 topics each)",
+        "Samuel bet (24 chapters)",
+        "Talmud Ch 4 (8 sections, 5-10 themes)"
+      ],
+      "8": [
+        "Deuteronomy Devarim (36 chapters, 2-3 topics each)",
+        "Kings alef (22 chapters)",
+        "Talmud Ch 5 (5 sections, 5-10 themes)"
+      ],
+      "2026-09-11 00:00:00": [
+        "In depth Genesi, Exodus and Numbers (305 chapters)"
+      ],
+      "Not covered": [
+        "Leviticus"
+      ],
+      "Not covered in HS": [
+        "Deuteronomy"
+      ],
+      "9": [
+        "Kings bet (9 chapters)",
+        "Talmud Sugyots of Yuma (10 sections, 5-10 themes)"
+      ],
+      "10": [
+        "Isahia (10 chapters)",
+        "Talmut Masechet Kidushim (12 sections, 5-10 themes)"
+      ],
+      "11": [
+        "Jeremiah (11 chapters)",
+        "Talmud Masechet Makkot (10 sections, 5-10 themes)"
+      ],
+      "All": [
+        "Challaha",
+        "Class periods",
+        "613 commandments (Torah mitzvots)",
+        "Mishnah Torah",
+        "Shulhan Aruck",
+        "Total periods",
+        "Halacha allocation",
+        "Text allocation",
+        "Four areas"
+      ]
+    };
+
+    const allCOptions = [
+      "613 commandments (Torah mitzvots)",
+      "Advanced",
+      "Challaha",
+      "Class periods",
+      "Deuteronomy",
+      "Deuteronomy Devarim (36 chapters, 2-3 topics each)",
+      "First half of Numbers (15 chapters, 2-3 topics each)",
+      "Foundations",
+      "Four areas",
+      "Genesis Bereshit (50 chapters, 2-3 concepts) + 1/2 Exodus (20 chapters, 2-3 themes)",
+      "Halacha allocation",
+      "In depth Genesi, Exodus and Numbers (305 chapters)",
+      "Intermediate",
+      "Isahia (10 chapters)",
+      "Jeremiah (11 chapters)",
+      "Joshua",
+      "Kings alef (22 chapters)",
+      "Kings bet (9 chapters)",
+      "Leviticus",
+      "Mishnah Berachot (9 sections, 5-10 themes)",
+      "Mishnah Torah",
+      "Samuel alef (31 chapters)",
+      "Samuel bet (24 chapters)",
+      "Second half of Numbers (chapters 16-32, 2-3 topics each)",
+      "Shulhan Aruck",
+      "Talmud Ch 4 (8 sections, 5-10 themes)",
+      "Talmud Ch 5 (5 sections, 5-10 themes)",
+      "Talmud Masechet Makkot (10 sections, 5-10 themes)",
+      "Talmud Sugyots of Yuma (10 sections, 5-10 themes)",
+      "Talmut Masechet Kidushim (12 sections, 5-10 themes)",
+      "Text allocation",
+      "Total periods"
+    ];
+
+    // DOM elements
+    const domainSelect = document.getElementById('domain');
+    const gradeSelect = document.getElementById('grade');
+    const contentSelect = document.getElementById('content');
+    const colDSelect = document.getElementById('colD');
+    const tableBody = document.querySelector('#table tbody');
+
+    // Populate domain dropdown
+    function loadDomains() {
+      domains.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        domainSelect.appendChild(opt);
+      });
+    }
+
+    // Populate Column D dropdown with all concepts from Column C
+    function loadColD() {
+      allCOptions.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        colDSelect.appendChild(opt);
+      });
+    }
+
+    // When domain changes, update grade options
+    domainSelect.addEventListener('change', () => {
+      const domain = domainSelect.value;
+      gradeSelect.innerHTML = '<option value="">Select Grade</option>';
+      contentSelect.innerHTML = '<option value="">Select Content</option>';
+      contentSelect.disabled = true;
+
+      if (!domain || !domainToGrades[domain]) {
+        gradeSelect.disabled = true;
+        renderTable();
+        return;
+      }
+
+      domainToGrades[domain].forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = g;
+        gradeSelect.appendChild(opt);
+      });
+
+      gradeSelect.disabled = false;
+      renderTable();
+    });
+
+    // When grade changes, update content options
+    gradeSelect.addEventListener('change', () => {
+      const grade = gradeSelect.value;
+      contentSelect.innerHTML = '<option value="">Select Content</option>';
+
+      if (!grade || !gradeToContents[grade]) {
+        contentSelect.disabled = true;
+        renderTable();
+        return;
+      }
+
+      gradeToContents[grade].forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        contentSelect.appendChild(opt);
+      });
+
+      contentSelect.disabled = false;
+      renderTable();
+    });
+
+    // When content changes, just re-render table
+    contentSelect.addEventListener('change', renderTable);
+
+    // Render filtered table
+    function renderTable() {
+      tableBody.innerHTML = '';
+      const domain = domainSelect.value;
+      const grade = gradeSelect.value;
+      const content = contentSelect.value;
+
+      domains.forEach(d => {
+        const grades = domainToGrades[d] || [];
+        grades.forEach(g => {
+          const contents = gradeToContents[g] || [];
+          contents.forEach(c => {
+            // Apply filters
+            if (domain && d !== domain) return;
+            if (grade && g !== grade) return;
+            if (content && c !== content) return;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${d}</td>
+              <td>${g}</td>
+              <td>${c}</td>
+            `;
+            tableBody.appendChild(tr);
+          });
+        });
+      });
+    }
+
+    // Initialize
+    loadDomains();
+    loadColD();
+    renderTable();
+  </script>
+</body>
+</html>
+
