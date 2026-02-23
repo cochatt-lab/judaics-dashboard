@@ -8,17 +8,16 @@
 <body>
   <h1>Judaic Curriculum Unit Designer</h1>
 
-  <!-- Dropdown 1 + 2: Text type -->
+  <!-- DROPDOWNS -->
   <label>Text Type:</label>
   <select id="textType">
     <option value="">Select...</option>
-    <option value="Chumash">Chumash</option>
+    <option value="ChumashNEW">Chumash</option>
     <option value="Navi">Navi</option>
     <option value="Talmud">Talmud</option>
     <option value="Halacha">Halacha</option>
   </select>
 
-  <!-- Dropdown 3: Grade JrK–12 -->
   <label>Grade:</label>
   <select id="grade">
     <option value="">Select grade...</option>
@@ -38,7 +37,6 @@
     <option>12</option>
   </select>
 
-  <!-- Dropdown 4–7: Book / Chapter / Start / End -->
   <label>Book:</label>
   <select id="book"></select>
 
@@ -51,13 +49,12 @@
   <label>End Verse:</label>
   <select id="endVerse"></select>
 
-  <!-- Dropdown 8: Benchmarks -->
   <label>Benchmarks:</label>
   <select id="benchmark">
     <option value="">Select benchmark...</option>
   </select>
 
-  <!-- text areas -->
+  <!-- TEXT BOXES -->
   <h2>Unit Design Panels</h2>
 
   <label>Unit Aim and Focus – Posnack Learning Goals</label>
@@ -93,6 +90,10 @@
   <label>Lesson Plans</label>
   <textarea id="unitLessons" rows="3"></textarea>
 
+  <!-- SAVE BUTTON -->
+  <button id="saveUnit">Save Unit (download JSON)</button>
+
+  <!-- JS FILE GOES HERE, LAST LINE BEFORE </body> -->
   <script src="script.js"></script>
 </body>
 </html>
