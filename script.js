@@ -1,4 +1,4 @@
-// Simple CSV parser
+// Simple CSV parser: returns array of objects keyed by header row
 function parseCSV(text) {
   const lines = text.trim().split("\n");
   const headers = lines[0].split(",").map(h => h.trim());
@@ -22,10 +22,10 @@ const state = {
 
 window.addEventListener("DOMContentLoaded", async () => {
   await Promise.all([
-    loadTextData("ChumashNEW"),   // from RShlomieVision Chumash sheet export[file:2]
+    loadTextData("ChumashNEW"),   // Subject,Key Chapter,StartVerse,EndVerse,Posnack Learning Goals (TBD)[file:2]
     loadTextData("Navi"),
     loadTextData("Talmud"),
-    loadTextData("Halacha"),
+    loadHalachaData(),           // Content / Allocation,Key Source / Unit,Key Concept / Theme[file:2]
     loadBenchmarks()
   ]);
 
@@ -40,28 +40,39 @@ window.addEventListener("DOMContentLoaded", async () => {
 async function loadTextData(sheetName) {
   const res = await fetch(`data/${sheetName}.csv`);
   const text = await res.text();
-  // expects: Subject,Key Chapter,StartVerse,EndVerse,Posnack Learning Goals (TBD)[file:2]
+  // EXPECT: Subject,Key Chapter,StartVerse,EndVerse,Posnack Learning Goals (TBD)[file:2]
   const rows = parseCSV(text);
   state.data[sheetName] = rows;
+}
+
+async function loadHalachaData() {
+  const res = await fetch("data/Halacha.csv");
+  const text = await res.text();
+  // EXPECT: Content / Allocation,Key Source / Unit,Key Concept / Theme[file:2]
+  const rows = parseCSV(text);
+  state.data.Halacha = rows;
 }
 
 async function loadBenchmarks() {
   const res = await fetch("data/BenchmarksJUDAICCURRICULUM.csv");
   const text = await res.text();
-  // expects something like: Area,Code,Benchmark (you can adjust to actual headers)[file:1]
+  // Recommended: Code,Benchmark (rename headers in Excel if needed)[file:1]
   const rows = parseCSV(text);
   state.benchmarks = rows;
+
   const select = document.getElementById("benchmark");
   rows.forEach(row => {
-    const code = row.Code || row["Standard"] || "";
-    const desc = row.Benchmark || row["Description"] || "";
+    const code = row.Code || "";
+    const desc = row.Benchmark || "";
+    if (!code && !desc) return;
     const opt = document.createElement("option");
     opt.value = code;
-    opt.textContent = `${code} – ${desc}`;
+    opt.textContent = code ? `${code} – ${desc}` : desc;
     select.appendChild(opt);
   });
 }
 
+// Utility to fill a <select>
 function fillSelect(selectId, items) {
   const select = document.getElementById(selectId);
   select.innerHTML = "";
@@ -78,61 +89,116 @@ function fillSelect(selectId, items) {
   });
 }
 
+// Dropdown 4: Book
 function updateBooks() {
   const type = document.getElementById("textType").value;
   if (!type) return;
   const rows = state.data[type];
-  const books = [...new Set(rows.map(r => r.Subject || r.Book))].sort();
+
+  let books;
+  if (type === "Halacha") {
+    // Use Content / Allocation as "Book"[file:2]
+    books = [...new Set(rows.map(r => r["Content / Allocation"]))].sort();
+  } else {
+    // Chumash/Navi/Talmud: Subject as Book[file:2]
+    books = [...new Set(rows.map(r => r.Subject))].sort();
+  }
+
   fillSelect("book", books);
   fillSelect("chapter", []);
   fillSelect("startVerse", []);
   fillSelect("endVerse", []);
 }
 
+// Dropdown 5: Chapter
 function updateChapters() {
   const type = document.getElementById("textType").value;
   const book = document.getElementById("book").value;
   if (!type || !book) return;
-  const rows = state.data[type].filter(r => (r.Subject || r.Book) === book);
-  const chapters = [...new Set(rows.map(r => r["Key Chapter"] || r.Chapter))]
-    .sort((a, b) => Number(a) - Number(b));
+
+  const rows = state.data[type].filter(r => {
+    if (type === "Halacha") {
+      return r["Content / Allocation"] === book;
+    } else {
+      return r.Subject === book;
+    }
+  });
+
+  let chapters;
+  if (type === "Halacha") {
+    // Use Key Source / Unit as "Chapter"[file:2]
+    chapters = [...new Set(rows.map(r => r["Key Source / Unit"]))].sort();
+  } else {
+    // Use Key Chapter as Chapter[file:2]
+    chapters = [...new Set(rows.map(r => r["Key Chapter"]))].sort((a, b) => Number(a) - Number(b));
+  }
+
   fillSelect("chapter", chapters);
   fillSelect("startVerse", []);
   fillSelect("endVerse", []);
 }
 
+// Dropdown 6: StartVerse
 function updateVerses() {
   const type = document.getElementById("textType").value;
   const book = document.getElementById("book").value;
   const chapter = document.getElementById("chapter").value;
   if (!type || !book || !chapter) return;
-  const rows = state.data[type].filter(r =>
-    (r.Subject || r.Book) === book &&
-    (r["Key Chapter"] || r.Chapter) === chapter
-  );
-  const startVerses = [...new Set(rows.map(r => r.StartVerse))]
-    .sort((a, b) => Number(a) - Number(b));
-  fillSelect("startVerse", startVerses);
+
+  const rows = state.data[type].filter(r => {
+    if (type === "Halacha") {
+      return r["Content / Allocation"] === book &&
+             r["Key Source / Unit"] === chapter;
+    } else {
+      return r.Subject === book &&
+             String(r["Key Chapter"]) === String(chapter);
+    }
+  });
+
+  let startValues;
+  if (type === "Halacha") {
+    // Use Key Concept / Theme as StartVerse equivalent[file:2]
+    startValues = [...new Set(rows.map(r => r["Key Concept / Theme"]))].sort();
+  } else {
+    startValues = [...new Set(rows.map(r => r.StartVerse))].sort((a, b) => Number(a) - Number(b));
+  }
+
+  fillSelect("startVerse", startValues);
   fillSelect("endVerse", []);
 }
 
+// Dropdown 7: EndVerse, plus Posnack Learning Goals autofill for Chumash/Navi/Talmud
 function updateEndVerses() {
   const type = document.getElementById("textType").value;
   const book = document.getElementById("book").value;
   const chapter = document.getElementById("chapter").value;
-  const startVerse = document.getElementById("startVerse").value;
-  if (!type || !book || !chapter || !startVerse) return;
-  const rows = state.data[type].filter(r =>
-    (r.Subject || r.Book) === book &&
-    (r["Key Chapter"] || r.Chapter) === chapter &&
-    String(r.StartVerse) === String(startVerse)
-  );
-  const endVerses = [...new Set(rows.map(r => r.EndVerse))]
-    .sort((a, b) => Number(a) - Number(b));
-  fillSelect("endVerse", endVerses);
+  const startVal = document.getElementById("startVerse").value;
+  if (!type || !book || !chapter || !startVal) return;
 
-  // Optional: auto-fill Posnack Learning Goals into Unit Aim
-  if (rows.length === 1) {
+  const rows = state.data[type].filter(r => {
+    if (type === "Halacha") {
+      return r["Content / Allocation"] === book &&
+             r["Key Source / Unit"] === chapter &&
+             r["Key Concept / Theme"] === startVal;
+    } else {
+      return r.Subject === book &&
+             String(r["Key Chapter"]) === String(chapter) &&
+             String(r.StartVerse) === String(startVal);
+    }
+  });
+
+  let endValues;
+  if (type === "Halacha") {
+    // No separate EndVerse; reuse Key Concept / Theme or keep single choice[file:2]
+    endValues = [...new Set(rows.map(r => r["Key Concept / Theme"]))].sort();
+  } else {
+    endValues = [...new Set(rows.map(r => r.EndVerse))].sort((a, b) => Number(a) - Number(b));
+  }
+
+  fillSelect("endVerse", endValues);
+
+  // Only Chumash/Navi/Talmud have Posnack Learning Goals column E in these sheets[file:2]
+  if (type !== "Halacha" && rows.length === 1) {
     const goal = rows[0]["Posnack Learning Goals (TBD)"] || "";
     document.getElementById("unitAim").value = goal;
   }
@@ -148,6 +214,7 @@ function saveUnitAsJSON() {
     startVerse: document.getElementById("startVerse").value,
     endVerse: document.getElementById("endVerse").value,
     benchmarkCode: document.getElementById("benchmark").value,
+
     unitAim: document.getElementById("unitAim").value,
     unitOutline: document.getElementById("unitOutline").value,
     unitKeywords: document.getElementById("unitKeywords").value,
@@ -159,6 +226,7 @@ function saveUnitAsJSON() {
     unitResources: document.getElementById("unitResources").value,
     unitDiff: document.getElementById("unitDiff").value,
     unitLessons: document.getElementById("unitLessons").value,
+
     timestamp: new Date().toISOString()
   };
 
