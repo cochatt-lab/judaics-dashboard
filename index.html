@@ -8,7 +8,17 @@
 <body>
   <h1>Judaic Curriculum Unit Designer</h1>
 
-  <!-- DROPDOWNS -->
+  <!-- Quick Start box -->
+  <div style="border:1px solid #ccc;padding:8px;margin-bottom:12px;font-size:0.9rem;">
+    <strong>Quick Start</strong><br>
+    1. Choose <em>Text Type</em> (Chumash, Navi, Talmud, Halacha) and <em>Grade</em>.<br>
+    2. Select Book → Chapter → Start/End Verse (for Halacha: Content / Allocation → Key Source / Unit → Key Concept / Theme).[file:2]<br>
+    3. Pick one or more <em>Benchmarks</em> that match your unit focus.[file:1]<br>
+    4. Fill in the unit text boxes (Aim, Outline, Outcomes, etc.).<br>
+    5. Click <em>Save Unit</em> to download your unit file and upload it to the shared folder.
+  </div>
+
+  <!-- DROPDOWNS: TEXT SELECTION -->
   <label>Text Type:</label>
   <select id="textType">
     <option value="">Select...</option>
@@ -49,12 +59,50 @@
   <label>End Verse:</label>
   <select id="endVerse"></select>
 
-  <label>Benchmarks:</label>
-  <select id="benchmark">
-    <option value="">Select benchmark...</option>
+  <!-- BENCHMARKS: ONE DROPDOWN PER AREA -->
+  <h2>Benchmarks</h2>
+
+  <label>Benchmarks – ELA:</label>
+  <select id="benchmarkELA">
+    <option value="">Select ELA benchmark...</option>
   </select>
 
-  <!-- TEXT BOXES -->
+  <label>Benchmarks – HEB:</label>
+  <select id="benchmarkHEB">
+    <option value="">Select HEB benchmark...</option>
+  </select>
+
+  <label>Benchmarks – JUD Beliefs:</label>
+  <select id="benchmarkJUDBeliefs">
+    <option value="">Select JUD Beliefs benchmark...</option>
+  </select>
+
+  <label>Benchmarks – JUD Communication:</label>
+  <select id="benchmarkJUDComm">
+    <option value="">Select JUD Comm benchmark...</option>
+  </select>
+
+  <label>Benchmarks – JUD History & Geography:</label>
+  <select id="benchmarkJUDHisGeo">
+    <option value="">Select JUD His/Geo benchmark...</option>
+  </select>
+
+  <label>Benchmarks – JUD Metacognition:</label>
+  <select id="benchmarkJUDMetacognition">
+    <option value="">Select JUD Metacognition benchmark...</option>
+  </select>
+
+  <label>Benchmarks – JUD Text:</label>
+  <select id="benchmarkJUDTxt">
+    <option value="">Select JUD Text benchmark...</option>
+  </select>
+
+  <label>Benchmarks – Social Studies:</label>
+  <select id="benchmarkSS">
+    <option value="">Select SS benchmark...</option>
+  </select>
+
+  <!-- UNIT DESIGN PANELS -->
   <h2>Unit Design Panels</h2>
 
   <label>Unit Aim and Focus – Posnack Learning Goals</label>
@@ -91,6 +139,7 @@
   <textarea id="unitLessons" rows="3"></textarea>
 
   <!-- SAVE BUTTON -->
+  <br><br>
   <button id="saveUnit">Save Unit (download JSON)</button>
 
   <!-- JS FILE GOES HERE, LAST LINE BEFORE </body> -->
