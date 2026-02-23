@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Judaic Curriculum Unit Designer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Judaic Curriculum Unit Designer</h1>
+
+  <!-- Dropdown 1 + 2: Text type -->
+  <label>Text Type:</label>
+  <select id="textType">
+    <option value="">Select...</option>
+    <option value="Chumash">Chumash</option>
+    <option value="Navi">Navi</option>
+    <option value="Talmud">Talmud</option>
+    <option value="Halacha">Halacha</option>
+  </select>
+
+  <!-- Dropdown 3: Grade JrK–12 -->
+  <label>Grade:</label>
+  <select id="grade">
+    <option value="">Select grade...</option>
+    <option>JrK</option>
+    <option>K</option>
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+    <option>9</option>
+    <option>10</option>
+    <option>11</option>
+    <option>12</option>
+  </select>
+
+  <!-- Dropdown 4–7: Book / Chapter / Start / End -->
+  <label>Book:</label>
+  <select id="book"></select>
+
+  <label>Chapter:</label>
+  <select id="chapter"></select>
+
+  <label>Start Verse:</label>
+  <select id="startVerse"></select>
+
+  <label>End Verse:</label>
+  <select id="endVerse"></select>
+
+  <!-- Dropdown 8: Benchmarks -->
+  <label>Benchmarks:</label>
+  <select id="benchmark">
+    <option value="">Select benchmark...</option>
+  </select>
+
+  <!-- text areas -->
+  <h2>Unit Design Panels</h2>
+
+  <label>Unit Aim and Focus – Posnack Learning Goals</label>
+  <textarea id="unitAim" rows="3"></textarea>
+
+  <label>Unit Outline by Lesson</label>
+  <textarea id="unitOutline" rows="3"></textarea>
+
+  <label>Unit Keywords and Phrases</label>
+  <textarea id="unitKeywords" rows="3"></textarea>
+
+  <label>Unit Learning Outcomes</label>
+  <textarea id="unitOutcomes" rows="3"></textarea>
+
+  <label>Unit Skills and Understanding Spiral</label>
+  <textarea id="unitSkills" rows="3"></textarea>
+
+  <label>Unit Levels of Attainment (Proficiency)</label>
+  <textarea id="unitLevels" rows="3"></textarea>
+
+  <label>Unit Higher Order Thinking</label>
+  <textarea id="unitHot" rows="3"></textarea>
+
+  <label>Unit Life Lessons</label>
+  <textarea id="unitLifeLessons" rows="3"></textarea>
+
+  <label>Resources (Text)</label>
+  <textarea id="unitResources" rows="3"></textarea>
+
+  <label>Differentiation</label>
+  <textarea id="unitDiff" rows="3"></textarea>
+
+  <label>Lesson Plans</label>
+  <textarea id="unitLessons" rows="3"></textarea>
+
+  <script src="script.js"></script>
+</body>
+</html>
